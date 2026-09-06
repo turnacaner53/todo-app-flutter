@@ -37,9 +37,9 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
 
   Future<void> _load() async {
     final db = ref.read(appDatabaseProvider);
-    final row =
-        await (db.select(db.notes)..where((t) => t.id.equals(widget.noteId)))
-            .getSingleOrNull();
+    final row = await (db.select(
+      db.notes,
+    )..where((t) => t.id.equals(widget.noteId))).getSingleOrNull();
     if (row == null || !mounted) return;
     _titleController.text = row.title;
     final quill = QuillController(
@@ -63,11 +63,13 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
   Future<void> _saveNow() async {
     if (!_dirty) return;
     _dirty = false;
-    await ref.read(noteActionsProvider).save(
-      noteId: widget.noteId,
-      title: _titleController.text,
-      content: _contentJson,
-    );
+    await ref
+        .read(noteActionsProvider)
+        .save(
+          noteId: widget.noteId,
+          title: _titleController.text,
+          content: _contentJson,
+        );
   }
 
   @override
@@ -82,9 +84,11 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
 
   Future<void> _moveToTrash() async {
     final db = ref.read(appDatabaseProvider);
-    final trashId = await ref.read(noteActionsProvider).moveNoteToTrash(
-      widget.noteId,
-    );
+    final trashId = await ref
+        .read(noteActionsProvider)
+        .moveNoteToTrash(
+          widget.noteId,
+        );
     if (!mounted) return;
     context.pop();
     showUndoTrashSnack(
@@ -92,37 +96,6 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
       db,
       trashId,
       'Note moved to trash',
-    );
-  }
-
-  /// Full multi-row toolbar (undo/redo, lists, colors, link, quote, ...) in a
-  /// bottom sheet, sharing the same controller as the compact row.
-  Future<void> _showFullToolbarSheet() {
-    final quill = _quill;
-    if (quill == null) return Future.value();
-    return showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Text(
-                  'More formatting',
-                  style: Theme.of(sheetContext).textTheme.titleSmall,
-                ),
-              ),
-              const SizedBox(height: 8),
-              QuillSimpleToolbar(controller: quill),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -168,8 +141,9 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                 onPressed: () => showColorPickerSheet(
                   context: context,
                   current: row.color,
-                  onPicked: (c) =>
-                      ref.read(noteActionsProvider).setNoteColor(widget.noteId, c),
+                  onPicked: (c) => ref
+                      .read(noteActionsProvider)
+                      .setNoteColor(widget.noteId, c),
                 ),
               ),
               IconButton(
@@ -198,49 +172,55 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                 ),
               ),
               const Divider(height: 1),
-              Row(
-                children: [
-                  Expanded(
-                    child: QuillSimpleToolbar(
-                      controller: _quill!,
-                      config: const QuillSimpleToolbarConfig(
-                        multiRowsDisplay: false,
-                        showDividers: false,
-                        toolbarIconAlignment: WrapAlignment.start,
-                        // First row keeps the defaults: header, font-size,
-                        // bold, italic, underline. Everything else lives in
-                        // the expand sheet:
-                        showUndo: false,
-                        showRedo: false,
-                        showFontFamily: false,
-                        showStrikeThrough: false,
-                        showInlineCode: false,
-                        showColorButton: false,
-                        showBackgroundColorButton: false,
-                        showClearFormat: false,
-                        showListNumbers: false,
-                        showListBullets: false,
-                        showListCheck: false,
-                        showCodeBlock: false,
-                        showQuote: false,
-                        showIndent: false,
-                        showLink: false,
-                        showSearchButton: false,
-                        showSubscript: false,
-                        showSuperscript: false,
-                      ),
-                    ),
+              // Minimal formatting row: heading (B1/B2/Normal) + italic +
+              // underline. All other tools are intentionally removed.
+              QuillSimpleToolbar(
+                controller: _quill!,
+                config: const QuillSimpleToolbarConfig(
+                  multiRowsDisplay: false,
+                  showDividers: false,
+                  toolbarIconAlignment: WrapAlignment.start,
+                  // showHeaderStyle / italic / underline: default true.
+                  showBoldButton: false,
+                  showFontSize: false,
+                  showFontFamily: false,
+                  showUndo: false,
+                  showRedo: false,
+                  showStrikeThrough: false,
+                  showInlineCode: false,
+                  showColorButton: false,
+                  showBackgroundColorButton: false,
+                  showClearFormat: false,
+                  showListNumbers: false,
+                  showListBullets: false,
+                  showListCheck: false,
+                  showCodeBlock: false,
+                  showQuote: false,
+                  showIndent: false,
+                  showLink: false,
+                  showSearchButton: false,
+                  showSubscript: false,
+                  showSuperscript: false,
+                  buttonOptions: QuillSimpleToolbarButtonOptions(
+                    selectHeaderStyleDropdownButton:
+                        QuillToolbarSelectHeaderStyleDropdownButtonOptions(
+                          attributes: [
+                            Attribute.h1,
+                            Attribute.h2,
+                            Attribute.header,
+                          ],
+                        ),
                   ),
-                  IconButton(
-                    tooltip: 'More formatting',
-                    icon: const Icon(Icons.expand_more),
-                    onPressed: _showFullToolbarSheet,
-                  ),
-                ],
+                ),
               ),
               const Divider(height: 1),
               Expanded(
-                child: QuillEditor.basic(controller: _quill!),
+                child: QuillEditor.basic(
+                  controller: _quill!,
+                  config: const QuillEditorConfig(
+                    padding: EdgeInsets.fromLTRB(20, 16, 20, 24),
+                  ),
+                ),
               ),
             ],
           ),
