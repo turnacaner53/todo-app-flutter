@@ -1,19 +1,32 @@
-# Todos (Flutter)
+# Todos — a Flutter Android app
 
-A local-first task list and note-taking app for Android & iOS — task lists,
-rich text notes, a shared trash, per-item colors, drag-to-reorder and
-light/dark/system themes, all stored on-device (SQLite). No backend.
+**Todos** is a local-first to-do and notes app for **Android**, built with
+Flutter. It keeps task lists and rich text notes on your device (SQLite) —
+no account, no server, no internet required. Deleted items wait in a shared
+30-day trash, cards are color-tinted and drag-to-reorder, and the UI follows
+your system light/dark theme.
 
-This is the **Flutter clone of `todo-app`** (the Next.js version in
-`D:\_PROJECTS\qwen3.8-test-project\todo-app`): the same feature set rebuilt on
-a native mobile toolchain. IndexedDB/Dexie became drift/SQLite, React state
-became Riverpod, Tiptap became flutter_quill — the product decisions stayed.
+This project is the **Flutter clone of `todo-app`** (the Next.js version at
+`D:\_PROJECTS\qwen3.8-test-project\todo-app`): the same product, rebuilt on a
+native mobile stack — IndexedDB/Dexie became drift/SQLite, React state became
+Riverpod, Tiptap became flutter_quill. It also doubles as a test bed for
+**Qwen3.8 27B** running locally as a coding agent.
 
-Like the original, this is a **test project**: it exists to see how well
-**Qwen3.8 27B** performs running locally as a coding model. The app itself is
-the yardstick — small enough to build in one sitting, real enough to expose
-whether the model can handle Flutter state management, offline persistence and
-styling without falling apart.
+## Download (Android APK)
+
+Grab the latest release build from the
+[**Releases page → v1.0.0**](https://github.com/turnacaner53/todo-app-flutter/releases/tag/v1.0.0):
+
+| APK | For |
+|---|---|
+| `Todos-arm64-v8a.apk` (≈22 MB) | most modern phones — **pick this one** |
+| `Todos-armeabi-v7a.apk` (≈20 MB) | older 32-bit devices |
+| `Todos-x86_64.apk` (≈23 MB) | Android emulators |
+| `Todos-universal.apk` (≈63 MB) | fallback, all ABIs |
+
+Enable *Install unknown apps* in Android settings, then open the APK. The
+build is signed with a debug keystore — fine for sideloading and evaluation,
+not for Play Store distribution.
 
 ## Stack
 
@@ -30,7 +43,8 @@ dart run build_runner build    # regenerates drift code (*.g.dart)
 flutter run -d <device>
 ```
 
-Then launch it on an Android or iOS device.
+Then launch it on an Android device or emulator (`flutter emulators` to
+start one).
 
 Verification:
 
