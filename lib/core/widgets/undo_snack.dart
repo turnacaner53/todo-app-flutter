@@ -13,6 +13,10 @@ void showUndoTrashSnack(
     ..showSnackBar(
       SnackBar(
         content: Text(message),
+        duration: const Duration(seconds: 5),
+        // Flutter 3.41 makes snackbars with an action persistent by default;
+        // undo snackbars must auto-dismiss after 5s.
+        persist: false,
         action: SnackBarAction(
           label: 'Undo',
           onPressed: () => db.trashDao.restore(trashId),
@@ -33,6 +37,9 @@ void showUndoMultiSnack(
     ..showSnackBar(
       SnackBar(
         content: Text(message),
+        duration: const Duration(seconds: 5),
+        // See showUndoTrashSnack: action snackbars persist by default.
+        persist: false,
         action: SnackBarAction(
           label: 'Undo',
           onPressed: () async {

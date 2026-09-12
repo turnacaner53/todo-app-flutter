@@ -7,6 +7,11 @@ import 'package:todo_app_flutterv2/core/utils/delta_text.dart';
 import 'package:todo_app_flutterv2/features/dashboard/providers.dart';
 import 'package:todo_app_flutterv2/features/task_list/providers.dart';
 
+/// Masonry cards size themselves to their content: an empty card is the
+/// smallest, and long content is capped at [maxPreviewLines] lines before an
+/// "and N more…" row.
+const maxPreviewLines = 6;
+
 class DashCard extends StatelessWidget {
   const DashCard({
     required this.item,
@@ -51,6 +56,36 @@ class DashCard extends StatelessWidget {
   }
 }
 
+class _CardHeader extends StatelessWidget {
+  const _CardHeader({
+    required this.icon,
+    required this.color,
+    required this.title,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: color),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _ListCardBody extends ConsumerWidget {
   const _ListCardBody({required this.row});
 
@@ -60,78 +95,53 @@ class _ListCardBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tasks =
         ref.watch(todosOfListProvider(row.id)).value ?? const <TodoRow>[];
-    const maxPreview = 2;
-    final preview = tasks.where((t) => !t.completed).take(maxPreview).toList();
-    final remaining = tasks.where((t) => !t.completed).length;
+    final pending = tasks.where((t) => !t.completed).toList();
+    final preview = pending.take(maxPreviewLines).toList();
     final scheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          children: [
-            Icon(
-              Icons.checklist_rounded,
-              size: 18,
-              color: argbToColor(row.color) ?? scheme.primary,
-            ),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                row.title,
-                style: Theme.of(context).textTheme.titleMedium,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
+        _CardHeader(
+          icon: Icons.checklist_rounded,
+          color: argbToColor(row.color) ?? scheme.primary,
+          title: row.title,
         ),
         const SizedBox(height: 8),
-        Expanded(
-          // Non-scrollable shrinkWrap viewport: preview rows that don't fit
-          // are simply not painted — no RenderFlex overflow at large text
-          // scales.
-          child: tasks.isEmpty
-              ? Text(
-                  'No tasks yet',
-                  style: Theme.of(context).textTheme.bodySmall,
-                )
-              : ListView(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  padding: EdgeInsets.zero,
-                  children: [
-                    for (final t in preview)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 2),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.radio_button_unchecked, size: 14),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                t.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style:
-                                    Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (remaining > maxPreview)
-                      Text(
-                        'and ${remaining - maxPreview} more…',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                  ],
-                ),
-        ),
+        if (tasks.isEmpty)
+          Text('No tasks yet', style: Theme.of(context).textTheme.bodySmall)
+        else ...[
+          for (final t in preview)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: [
+                  const Icon(Icons.radio_button_unchecked, size: 14),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      t.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (pending.length > maxPreviewLines)
+            Text(
+              'and ${pending.length - maxPreviewLines} more…',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+        ],
+        const SizedBox(height: 10),
         Text(
-          '$remaining to do',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: scheme.onSurfaceVariant,
-          ),
+          '${pending.length} to do',
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
         ),
       ],
     );
@@ -146,43 +156,22 @@ class _NoteCardBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final preview = deltaToPlainText(row.content);
+    final scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          children: [
-            Icon(
-              Icons.sticky_note_2_rounded,
-              size: 18,
-              color: argbToColor(row.color) ??
-                  Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                row.title.isEmpty ? 'Untitled' : row.title,
-                style: Theme.of(context).textTheme.titleMedium,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
+        _CardHeader(
+          icon: Icons.sticky_note_2_rounded,
+          color: argbToColor(row.color) ?? scheme.primary,
+          title: row.title.isEmpty ? 'Untitled' : row.title,
         ),
         const SizedBox(height: 8),
-        Expanded(
-          child: ListView(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.zero,
-            children: [
-              Text(
-                preview.isEmpty ? 'Empty note' : preview,
-                maxLines: 4,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ],
-          ),
+        Text(
+          preview.isEmpty ? 'Empty note' : preview,
+          maxLines: maxPreviewLines,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.bodyMedium,
         ),
       ],
     );

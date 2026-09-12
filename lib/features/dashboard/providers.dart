@@ -47,15 +47,17 @@ final trashCountProvider = StreamProvider<int>(
 
 /// Merged, ordered dashboard feed of task lists and notes.
 List<DashItem> dashFeed(Ref ref) {
-  final lists = ref.watch(taskListsStreamProvider).value ??
-      const <TaskListRow>[];
+  final lists =
+      ref.watch(taskListsStreamProvider).value ?? const <TaskListRow>[];
   final notes = ref.watch(notesStreamProvider).value ?? const <NoteRow>[];
   return [
     for (final l in lists) DashItem.fromList(l),
     for (final n in notes) DashItem.fromNote(n),
-  ]..sort((a, b) => a.position != b.position
-      ? a.position.compareTo(b.position)
-      : a.sortAt.compareTo(b.sortAt));
+  ]..sort(
+    (a, b) => a.position != b.position
+        ? a.position.compareTo(b.position)
+        : a.sortAt.compareTo(b.sortAt),
+  );
 }
 
 final dashFeedProvider = Provider<List<DashItem>>(dashFeed);
